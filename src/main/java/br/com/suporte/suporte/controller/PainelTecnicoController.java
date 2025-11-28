@@ -1,6 +1,5 @@
 package br.com.suporte.suporte.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,119 +7,128 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import br.com.suporte.suporte.model.PainelTecnico;
 import br.com.suporte.suporte.model.Solicitacao;
-import br.com.suporte.suporte.repository.PainelTecnicoRepository;
 import br.com.suporte.suporte.repository.SolicitacaoRepository;
 
 @Controller
 public class PainelTecnicoController {
 
     @Autowired
-    private SolicitacaoRepository solicitacaoRepository;
+    private SolicitacaoRepository sr;
 
-    @Autowired
-    private PainelTecnicoRepository painelTecnicoRepository;
-
-    @GetMapping(value = "/painelTecnico")
-    public String mostrarPainelTecnico(
-            @RequestParam(value = "filtroTipo", required = false) String filtroTipo,
-            @RequestParam(value = "filtroStatus", required = false) String filtroStatus,
-            @RequestParam(value = "filtroAcao", required = false) String filtroAcao,
+    // =========================================================
+    // 1. LISTAR E FILTRAR SOLICITAÇÕES (GET /painelTecnico)
+    // =========================================================
+    @GetMapping("/painelTecnico")
+    public String painelTecnico(
+            @RequestParam(required = false) String filtroStatus,
+            @RequestParam(required = false) String filtroTipo,
             Model model) {
 
-        Iterable<Solicitacao> solicitacoes;
+        List<Solicitacao> solicitacoes;
 
-        if ((filtroTipo != null && !filtroTipo.isEmpty()) ||
-                (filtroStatus != null && !filtroStatus.isEmpty()) ||
-                (filtroAcao != null && !filtroAcao.isEmpty())) {
-
-            solicitacoes = filtrarSolicitacoes(filtroTipo, filtroStatus, filtroAcao);
+        // Lógica de Filtragem (requer os métodos no SolicitacaoRepository)
+        if (filtroStatus != null && !filtroStatus.isEmpty()) {
+            solicitacoes = sr.findByStatus(filtroStatus);
+        } else if (filtroTipo != null && !filtroTipo.isEmpty()) {
+            solicitacoes = sr.findByTipoProblema(filtroTipo);
         } else {
-            solicitacoes = solicitacaoRepository.findAll();
+            solicitacoes = sr.findAll(); // Requer que o Repository use JpaRepository
         }
 
+        // Adiciona a lista e os filtros atuais ao Model
         model.addAttribute("solicitacoes", solicitacoes);
-        model.addAttribute("filtroTipo", filtroTipo);
         model.addAttribute("filtroStatus", filtroStatus);
-        model.addAttribute("filtroAcao", filtroAcao);
+        model.addAttribute("filtroTipo", filtroTipo);
 
-        return "painelTecnico";
+        return "PainelTecnico";
     }
 
-    private Iterable<Solicitacao> filtrarSolicitacoes(String tipo, String status, String acao) {
-        Iterable<Solicitacao> todasSolicitacoes = solicitacaoRepository.findAll();
-        List<Solicitacao> solicitacoesFiltradas = new ArrayList<>();
+    // =========================================================
+    // 2. FLUXO DE EDIÇÃO (GET e POST)
+    // =========================================================
 
-        for (Solicitacao sol : todasSolicitacoes) {
-            boolean atende = true;
+    // 2.1 EXIBIR O FORMULÁRIO DE EDIÇÃO (GET /editarSolicitacao/{id})
+    @GetMapping("/editarSolicitacao/{id}")
+    public String exibirEdicao(@PathVariable Long id, Model model, RedirectAttributes attributes) {
 
-            // 1. Verifica Tipo (usando getTipoProblema do Modelo)
-            if (tipo != null && !tipo.isEmpty()) {
-                if (sol.getTipoProblema() == null || !tipo.equalsIgnoreCase(sol.getTipoProblema())) {
-                    atende = false;
-                }
-            }
+        Optional<Solicitacao> resultado = sr.findById(id);
 
-            // 2. Verifica Status
-            if (atende && status != null && !status.isEmpty()) {
-                if (sol.getStatus() == null || !status.equalsIgnoreCase(sol.getStatus())) {
-                    atende = false;
-                }
-            }
-
-            // 3. Verifica Ação (consulta PainelTecnico)
-            if (atende && acao != null && !acao.isEmpty()) {
-                Optional<PainelTecnico> ptOpt = painelTecnicoRepository.findBySolicitacaoId(sol.getId());
-
-                if (ptOpt.isPresent()) {
-                    PainelTecnico pt = ptOpt.get();
-                    if (pt.getAcao() == null || !acao.equalsIgnoreCase(pt.getAcao())) {
-                        atende = false;
-                    }
-                } else {
-                    atende = false; // Se não tem painel, não tem ação
-                }
-            }
-
-            if (atende) {
-                solicitacoesFiltradas.add(sol);
-            }
+        if (resultado.isPresent()) {
+            // Adiciona a solicitação carregada ao Model
+            model.addAttribute("solicitacao", resultado.get());
+            return "EditarSolicitacao"; // Use o nome do arquivo HTML: EditarSolicitacao.html
+        } else {
+            attributes.addFlashAttribute("erro", "Solicitação não encontrada para edição.");
+            return "redirect:/painelTecnico";
         }
-        return solicitacoesFiltradas;
     }
 
-    // Método para processar o formulário de "Assumir/Resolver"
-    @PostMapping("/assumirSolicitacao")
-    public String processarAssumirSolicitacao(
-            @RequestParam Long idSolicitacao,
-            @RequestParam String tecnicoResponsavel,
-            @RequestParam String observacoes) {
-
-        Optional<Solicitacao> solOpt = solicitacaoRepository.findById(idSolicitacao);
-
-        if (solOpt.isPresent()) {
-            Solicitacao sol = solOpt.get();
-
-            // Busca painel existente ou cria novo
-            PainelTecnico painel = painelTecnicoRepository.findBySolicitacaoId(idSolicitacao)
-                    .orElse(new PainelTecnico());
-
-            painel.setTecnicoResponsavel(tecnicoResponsavel);
-            painel.setObservacoes(observacoes);
-            painel.setStatus("Em Andamento");
-            painel.setAcao("Assumida");
-            painel.setSolicitacao(sol); // Vincula o objeto
-
-            painelTecnicoRepository.save(painel);
-
-            sol.setStatus("Em Andamento");
-            solicitacaoRepository.save(sol);
+    // 2.2 SALVAR AS ALTERAÇÕES DO FORMULÁRIO (POST /editarSolicitacao)
+    @PostMapping("/editarSolicitacao")
+    public String salvarEdicao(Solicitacao solicitacao, RedirectAttributes attributes) {
+        try {
+            // O save() executa o UPDATE no registro existente (graças ao ID no objeto)
+            sr.save(solicitacao);
+            attributes.addFlashAttribute("mensagem", "Solicitação #" + solicitacao.getId() + " atualizada com sucesso.");
+        } catch (Exception e) {
+            attributes.addFlashAttribute("erro", "Erro ao atualizar solicitação. Tente novamente.");
         }
+        return "redirect:/painelTecnico";
+    }
 
+    // =========================================================
+    // 3. MUDANÇA DE STATUS RÁPIDA (Assumir e Concluir)
+    // =========================================================
+
+    // 3.1 ASSUMIR SOLICITAÇÃO (GET /assumirSolicitacao/{id})
+    @GetMapping("/assumirSolicitacao/{id}")
+    public String assumir(@PathVariable Long id, RedirectAttributes attributes) {
+        Optional<Solicitacao> resultado = sr.findById(id);
+        if (resultado.isPresent()) {
+            Solicitacao solicitacao = resultado.get();
+            solicitacao.setStatus("Em Andamento");
+            sr.save(solicitacao);
+            attributes.addFlashAttribute("mensagem", "Solicitação #" + id + " assumida e movida para Em Andamento!");
+        } else {
+            attributes.addFlashAttribute("erro", "Solicitação não encontrada para ser assumida.");
+        }
+        return "redirect:/painelTecnico";
+    }
+
+    // 3.2 CONCLUIR SOLICITAÇÃO (GET /concluirSolicitacao/{id})
+    @GetMapping("/concluirSolicitacao/{id}")
+    public String concluir(@PathVariable Long id, RedirectAttributes attributes) {
+        Optional<Solicitacao> resultado = sr.findById(id);
+        if (resultado.isPresent()) {
+            Solicitacao solicitacao = resultado.get();
+            solicitacao.setStatus("Concluída");
+            sr.save(solicitacao);
+            attributes.addFlashAttribute("mensagem", "Solicitação #" + id + " concluída com sucesso!");
+        } else {
+            attributes.addFlashAttribute("erro", "Solicitação não encontrada para ser concluída.");
+        }
+        return "redirect:/painelTecnico";
+    }
+
+    // =========================================================
+    // 4. FLUXO DE EXCLUSÃO (APENAS O MÉTODO EXECUTOR)
+    // =========================================================
+
+    // 4.2 EXECUTAR A EXCLUSÃO (GET /excluirSolicitacao/{id})
+    @GetMapping("/excluirSolicitacao/{id}")
+    public String excluir(@PathVariable Long id, RedirectAttributes attributes) {
+        try {
+            sr.deleteById(id);
+            attributes.addFlashAttribute("mensagem", "Solicitação #" + id + " excluída com sucesso.");
+        } catch (Exception e) {
+            attributes.addFlashAttribute("erro", "Erro ao excluir a solicitação. Verifique se há Foreign Keys.");
+        }
         return "redirect:/painelTecnico";
     }
 }

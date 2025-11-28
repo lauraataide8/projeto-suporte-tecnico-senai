@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Técnico - Suporte SENAI</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/journal/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/index}">
+            <i class="bi bi-person-workspace me-2"></i> Painel Técnico
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/solicitacao}"><i class="bi bi-plus-circle me-1"></i> Abrir Nova</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" th:href="@{/painelTecnico}"><i class="bi bi-list-check me-1"></i> Solicitações</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4 mb-5">
+    <h2 class="text-primary mb-4">Gerenciamento de Solicitações</h2>
+
+    <div th:if="${mensagem}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${mensagem}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${erro}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${erro}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <form th:action="@{/painelTecnico}" method="get" class="mb-4 p-3 border rounded bg-white shadow-sm">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="filtroStatus" class="form-label">Filtrar por Status</label>
+                <select id="filtroStatus" name="filtroStatus" class="form-select">
+                    <option value="">Todos os Status</option>
+                    <option value="Pendente" th:selected="${filtroStatus == 'Pendente'}">Pendente</option>
+                    <option value="Em Andamento" th:selected="${filtroStatus == 'Em Andamento'}">Em Andamento</option>
+                    <option value="Concluída" th:selected="${filtroStatus == 'Concluída'}">Concluída</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="filtroTipo" class="form-label">Filtrar por Tipo</label>
+                <select id="filtroTipo" name="filtroTipo" class="form-select">
+                    <option value="">Todos os Tipos</option>
+                    <option value="Hardware" th:selected="${filtroTipo == 'Hardware'}">Hardware</option>
+                    <option value="Software" th:selected="${filtroTipo == 'Software'}">Software</option>
+                    <option value="Rede" th:selected="${filtroTipo == 'Rede'}">Rede/Internet</option>
+                    <option value="Impressora" th:selected="${filtroTipo == 'Impressora'}">Impressora</option>
+                    <option value="Outros" th:selected="${filtroTipo == 'Outros'}">Outros</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex justify-content-start">
+                <button type="submit" class="btn btn-primary me-2"><i class="bi bi-filter"></i> Aplicar</button>
+                <a th:href="@{/painelTecnico}" class="btn btn-outline-secondary">Limpar Filtros</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="card shadow-lg border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Data</th>
+                    <th scope="col">Solicitante</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Descrição</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="text-center">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="solicitacao : ${solicitacoes}">
+                    <td th:text="${solicitacao.id}">1</td>
+
+                    <td th:text="${solicitacao.dataCriacao}">[Data da Criação]</td>
+
+                    <td th:text="${solicitacao.nomeSolicitante}">João Silva</td>
+                    <td th:text="${solicitacao.tipoProblema}">Software</td>
+                    <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" th:text="${solicitacao.descricaoProblema}">Descrição detalhada...</td>
+
+                    <td>
+                                <span th:switch="${solicitacao.status}">
+                                    <span th:case="'Pendente'" class="badge bg-danger">Pendente</span>
+                                    <span th:case="'Em Andamento'" class="badge bg-warning text-dark">Em Andamento</span>
+                                    <span th:case="'Concluída'" class="badge bg-success">Concluída</span>
+                                    <span th:case="*" class="badge bg-secondary" th:text="${solicitacao.status}"></span>
+                                </span>
+                    </td>
+
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm" role="group">
+
+                            <a th:if="${solicitacao.status == 'Pendente'}"
+                               th:href="@{/assumirSolicitacao/{id}(id=${solicitacao.id})}"
+                               class="btn btn-outline-primary"
+                               title="Assumir">
+                                <i class="bi bi-person-fill-gear"></i>
+                            </a>
+
+                            <a th:if="${solicitacao.status == 'Em Andamento'}"
+                               th:href="@{/concluirSolicitacao/{id}(id=${solicitacao.id})}"
+                               class="btn btn-outline-success"
+                               title="Concluir">
+                                <i class="bi bi-check-lg"></i>
+                            </a>
+
+                            <a th:if="${solicitacao.status != 'Concluída'}"
+                               th:href="@{/editarSolicitacao/{id}(id=${solicitacao.id})}"
+                               class="btn btn-outline-warning"
+                               title="Editar">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+
+                            <a href="#"
+                               class="btn btn-outline-danger"
+                               data-bs-toggle="modal"
+                               data-bs-target="#modalExclusao"
+                               th:data-id="${solicitacao.id}"
+                               th:data-nome="${solicitacao.nomeSolicitante}"
+                               title="Excluir">
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${solicitacoes.empty}">
+                    <td colspan="7" class="text-center text-muted p-4">Nenhuma solicitação encontrada com os filtros atuais.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalExclusao" tabindex="-1" aria-labelledby="modalExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalExclusaoLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i> Confirmar Exclusão</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja **excluir permanentemente** a solicitação de número **<span id="solicitacao-id-display" class="fw-bold"></span>**?</p>
+                <p class="text-muted small">Aberta por: <span id="solicitacao-nome-display"></span>. Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a id="link-excluir" href="#" class="btn btn-danger">Sim, Excluir Definitivamente</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="mt-auto bg-dark text-white-50 p-3 text-center">
+    <div class="container">
+        <p class="mb-0">Sistema de Suporte Técnico SENAI | Desenvolvido com Spring Boot e Thymeleaf</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalExclusao = document.getElementById('modalExclusao');
+
+        modalExclusao.addEventListener('show.bs.modal', function (event) {
+
+            const button = event.relatedTarget;
+
+            const solicitacaoId = button.getAttribute('data-id');
+            const solicitacaoNome = button.getAttribute('data-nome');
+
+            const linkExcluir = document.getElementById('link-excluir');
+            linkExcluir.href = '/excluirSolicitacao/' + solicitacaoId;
+
+            document.getElementById('solicitacao-id-display').textContent = solicitacaoId;
+            document.getElementById('solicitacao-nome-display').textContent = solicitacaoNome;
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,8 +1,7 @@
 package br.com.suporte.suporte.model;
 
 import jakarta.persistence.*;
-// SE DER ERRO NO "jakarta", troque por "javax.persistence.*"
-// (depende da versão do seu Spring Boot)
+// Se estiver usando Spring Boot 2, troque por "javax.persistence.*"
 
 @Entity
 public class PainelTecnico {
@@ -11,24 +10,23 @@ public class PainelTecnico {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // --- CAMPO CORRIGIDO para alinhamento com o Repositório ---
+    // Mapeamento direto da chave estrangeira (ID da Solicitação)
+    @Column(name = "solicitacao_id", unique = true, nullable = false)
+    private Long idSolicitacao;
+
     private String tecnicoResponsavel;
     private String observacoes;
     private String status; // Ex: Em andamento, Concluído
     private String acao;   // Ex: Troca de peça, Formatação
 
-    // --- RELACIONAMENTO IMPORTANTE ---
-    // Isso cria a chave estrangeira "solicitacao_id" no banco de dados.
-    // É o que permite usar o findBySolicitacaoId no repositório.
-    @OneToOne
-    @JoinColumn(name = "solicitacao_id")
-    private Solicitacao solicitacao;
-
-    // --- CONSTRUTORES ---
+    // --- CONSTRUTOR ---
     public PainelTecnico() {
     }
 
-    // --- GETTERS E SETTERS ---
+    // --- GETTERS E SETTERS COMPLETOS ---
 
+    // ID do Painel Técnico
     public Long getId() {
         return id;
     }
@@ -37,6 +35,16 @@ public class PainelTecnico {
         this.id = id;
     }
 
+    // ID da Solicitação (campo chave para busca no repositório)
+    public Long getIdSolicitacao() {
+        return idSolicitacao;
+    }
+
+    public void setIdSolicitacao(Long idSolicitacao) {
+        this.idSolicitacao = idSolicitacao;
+    }
+
+    // Técnico Responsável
     public String getTecnicoResponsavel() {
         return tecnicoResponsavel;
     }
@@ -45,6 +53,7 @@ public class PainelTecnico {
         this.tecnicoResponsavel = tecnicoResponsavel;
     }
 
+    // Observações
     public String getObservacoes() {
         return observacoes;
     }
@@ -53,6 +62,7 @@ public class PainelTecnico {
         this.observacoes = observacoes;
     }
 
+    // Status
     public String getStatus() {
         return status;
     }
@@ -61,19 +71,12 @@ public class PainelTecnico {
         this.status = status;
     }
 
+    // Ação
     public String getAcao() {
         return acao;
     }
 
     public void setAcao(String acao) {
         this.acao = acao;
-    }
-
-    public Solicitacao getSolicitacao() {
-        return solicitacao;
-    }
-
-    public void setSolicitacao(Solicitacao solicitacao) {
-        this.solicitacao = solicitacao;
     }
 }

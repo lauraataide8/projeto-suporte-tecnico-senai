@@ -1,10 +1,17 @@
 package br.com.suporte.suporte.repository;
 
-import br.com.suporte.suporte.model.Solicitacao;
-import org.springframework.data.repository.CrudRepository;
+import java.util.List; // NOVO IMPORT
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository // <--- ISSO É ESSENCIAL PARA O ERRO SUMIR
-public interface SolicitacaoRepository extends CrudRepository<Solicitacao, Long> {
-    // Não precisa de código extra aqui por enquanto
+import br.com.suporte.suporte.model.Solicitacao;
+
+@Repository
+public interface SolicitacaoRepository extends JpaRepository<Solicitacao, Long> {
+
+    // Método para a funcionalidade de FILTRAR POR STATUS no Painel Técnico
+    public List<Solicitacao> findByStatus(String status);
+
+    // Método para a funcionalidade de FILTRAR POR TIPO DE PROBLEMA no Painel Técnico
+    public List<Solicitacao> findByTipoProblema(String tipoProblema);
 }

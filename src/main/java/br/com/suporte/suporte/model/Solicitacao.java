@@ -1,6 +1,11 @@
 package br.com.suporte.suporte.model;
 
-import jakarta.persistence.*; // Se der erro no jakarta, mude para javax.persistence.*
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+import java.time.LocalDateTime; // IMPORTANTE!
 
 @Entity
 public class Solicitacao {
@@ -9,14 +14,20 @@ public class Solicitacao {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String tipoProblema; // O nome exato que usaremos no Controller
+    private String nomeSolicitante;
+    private String tipoProblema;
+    private String descricaoProblema;
     private String status;
-    private String descricao;
 
-    // Construtor vazio
+    // 🔴 CAMPO QUE ESTAVA CAUSANDO O ERRO DE PARSING
+    private LocalDateTime dataCriacao;
+
+    // Construtor padrão (necessário pelo JPA)
     public Solicitacao() {}
 
-    // --- GETTERS E SETTERS OBRIGATÓRIOS ---
+    // ==========================================================
+    // MÉTODOS GETTERS E SETTERS (O Thymeleaf precisa deles)
+    // ==========================================================
 
     public Long getId() {
         return id;
@@ -24,6 +35,14 @@ public class Solicitacao {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getNomeSolicitante() {
+        return nomeSolicitante;
+    }
+
+    public void setNomeSolicitante(String nomeSolicitante) {
+        this.nomeSolicitante = nomeSolicitante;
     }
 
     public String getTipoProblema() {
@@ -34,6 +53,14 @@ public class Solicitacao {
         this.tipoProblema = tipoProblema;
     }
 
+    public String getDescricaoProblema() {
+        return descricaoProblema;
+    }
+
+    public void setDescricaoProblema(String descricaoProblema) {
+        this.descricaoProblema = descricaoProblema;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -42,11 +69,12 @@ public class Solicitacao {
         this.status = status;
     }
 
-    public String getDescricao() {
-        return descricao;
+    // 🏆 GETTER E SETTER PARA RESOLVER O ERRO EL1008E
+    public LocalDateTime getDataCriacao() {
+        return dataCriacao;
     }
 
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
+    public void setDataCriacao(LocalDateTime dataCriacao) {
+        this.dataCriacao = dataCriacao;
     }
 }
